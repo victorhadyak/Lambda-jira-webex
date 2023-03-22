@@ -75,7 +75,7 @@ def lambda_handler(event, context):
     else:
         error_message = "Jira ticket creation error"
         print(f"{error_message}, Status Code: {response.status_code}, Response: {response.text}")    
-    	return
+        
     # Send a message to a Webex 
     url = "https://webexapis.com/v1/messages"
     headers = {
