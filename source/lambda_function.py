@@ -73,8 +73,8 @@ def lambda_handler(event, context):
         jira_ticket_url = f'{jira_url}/jira/core/projects/{jira_key}/issues'
         incident_message = jira_ticket_url     
     else:
-        error_message = "Jira ticket creation error"
-        print(f"{error_message}, Status Code: {response.status_code}, Response: {response.text}")    
+        error_jira = "Jira ticket creation error"
+        print(f"{error_jira}, Status Code: {response.status_code}, Response: {response.text}")    
         
     # Send a message to a Webex 
     url = "https://webexapis.com/v1/messages"
@@ -99,5 +99,5 @@ def lambda_handler(event, context):
         }
         return resp
     else:
-    	error_message = "Webex POST request error"
-        print(f"{error_message}, Status Code: {response.status_code}, Response: {response.text}")
+        error_webex = "Webex POST request error"
+        print(f"{error_webex}, Status Code: {response.status_code}, Response: {response.text}")
