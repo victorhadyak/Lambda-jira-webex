@@ -69,15 +69,13 @@ def lambda_handler(event, context):
     )
 
     if response.status_code == 201:  # Assuming 201 as the successful status code for Jira ticket creation
-        print("Jira ticket created successfully")
-        jira_ticket_url = f'{jira_url}/jira/core/projects/{jira_key}/issues'  # Fixed syntax error
-        incident_message = jira_ticket_url
-        
+        print("Jira ticket created successfully")    
+        jira_ticket_url = f'{jira_url}/jira/core/projects/{jira_key}/issues'
+        incident_message = jira_ticket_url     
     else:
-        print(f"Status Code: {response.status_code}, Response: {response.text}")
-	
-    incident_message = jira_ticket_url
-    	
+        error_message = "Jira ticket creation error"
+        print(f"{error_message}, Status Code: {response.status_code}, Response: {response.text}")    
+    	return
     # Send a message to a Webex 
     url = "https://webexapis.com/v1/messages"
     headers = {
