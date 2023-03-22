@@ -1,7 +1,30 @@
-÷*hğI"î”ÀIŠvğS­¾åi®†oŞ’~^!dè/fÿØ8&vEy¿e¾$eMSŞö	´2£ê*Ã¶ı!.TÌ·×V:£T¨ÙiX““
-++¢GQ€J³J‚<l8Òó2SCìn*\˜wõ2Ó/À7‹ŒõC‘ÊG7%M¿¥İl8àLp |aÜ-FH²\hNcñ+¨aŠõDÆ¨&œÂ'IËUæ1 €–ƒK~‚Øƒ	§ÜuA”[›Ó¿»ÕU'JE	ã30­ÈKeq<„Ã¶ñ†_¯ƒ3Ä­—;×ÉNh%‰Éz¡ÌˆÔ¯ë¥¬{‡ûW\° ŞxdI™Ã1E°<fˆÇÔO~–]ƒôÜZ£¡”ÏFÒ´†Õú‘tœ#G½€Xóx
-PT·].D`ê‡¦ßˆ¿[Ù^*Ïú),ım»zŸ=ç€é"h³kö²¹o	cs]:›œÑzV©@åô¡n—­¶—Ê
-"T…û#7%ºB³ô>
-ÍJÌfâdã½Pê8râ~Ües=$®¤áAàùARµ÷ü
-Nl0¶6SÄpsrì+Æà)úcGìWÓº²?äxOŠ5Cö(·5&kqATØyW­Ïİk«!Šh›gCŒŒ”pÈÄçÊe¦ß3O¿êãê¦à&şP¢O]R­¶\ÿ$¤¢„&y¡cÍ)üÿTÙèŸÂ½øIQ+ÂVÿèx…Ú*T?4-“ù§APVÈªQ%«²pÓÒ¹*¥¡JáNeö&…¹áÁ‚IÔe»€
-„ ÙĞÎQpMp’åß=?iÛkU×ı	ì³êüoË0üÛ¶¸½œæı1}{&ÏDCn~
+"""Tree adapters let you convert from one tree structure to another
+
+Example:
+
+.. code-block:: python
+
+   from pip._vendor import html5lib
+   from pip._vendor.html5lib.treeadapters import genshi
+
+   doc = '<html><body>Hi!</body></html>'
+   treebuilder = html5lib.getTreeBuilder('etree')
+   parser = html5lib.HTMLParser(tree=treebuilder)
+   tree = parser.parse(doc)
+   TreeWalker = html5lib.getTreeWalker('etree')
+
+   genshi_tree = genshi.to_genshi(TreeWalker(tree))
+
+"""
+from __future__ import absolute_import, division, unicode_literals
+
+from . import sax
+
+__all__ = ["sax"]
+
+try:
+    from . import genshi  # noqa
+except ImportError:
+    pass
+else:
+    __all__.append("genshi")
