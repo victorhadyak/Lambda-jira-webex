@@ -72,6 +72,7 @@ def lambda_handler(event, context):
         print("Jira ticket created successfully")
         jira_ticket_url = f'{jira_url}/jira/core/projects/{jira_key}/issues'  # Fixed syntax error
         incident_message = jira_ticket_url
+        return incident_message
     else:
         print(f"Status Code: {response.status_code}, Response: {response.text}")
 
