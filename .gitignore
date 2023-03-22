@@ -1,0 +1,8 @@
+# local tf dir
+.terraform/*
+
+# tfstate files
+*.tfstate
+*.tfstate.*
+
+*.pcap
