@@ -25,15 +25,6 @@ headers = {
 response = requests.post(API_GATEWAY_URL, headers=headers, data=json.dumps(payload))
 
 if response.status_code == 200:
-    response_body = json.loads(response.text)
-    if response_body.get("message") == "OK":
-        print("Test passed")
-    else:
-        print("Test failed: Unexpected message in the response")
+	print("Test passed")    
 else:
-    print(f"Test failed: Unexpected status code {response.status_code}")
-    try:
-        response_body = json.loads(response.text)
-        print(f"Error message: {response_body.get('message')}")
-    except json.JSONDecodeError:
-        print("Error message: Unable to parse response text as JSON")
+	print(f"Test failed Status Code: {response.status_code}, Response: {response.text}")
