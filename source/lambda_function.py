@@ -1,3 +1,5 @@
+import boto3
+from datetime import datetime
 import requests
 from requests.auth import HTTPBasicAuth
 import json
@@ -11,30 +13,47 @@ jira_issue = os.environ['JIRA_ISSUE']
 jira_id = os.environ['JIRA_ID']
 webex_token = os.environ['WEBEX_ACCESS_TOKEN'] 
 webex_space_id = os.environ['WEBEX_SPACE_ID']
+s3_bucket_name = os.environ['S3_BUCKET_NAME']
+s3_key = os.environ['S3_KEY']
+
+def append_logs_to_s3(logs):
+    s3 = boto3.client('s3')
+    
+    try:
+        response = s3.get_object(Bucket=s3_bucket_name, Key=s3_key)
+        existing_logs = response['Body'].read().decode('utf-8')
+    except s3.exceptions.NoSuchKey:
+        existing_logs = ""
+    
+    updated_logs = existing_logs + logs + "\n"
+    s3.put_object(Bucket=s3_bucket_name, Key=s3_key, Body=updated_logs)
 
 def lambda_handler(event, context):  
 
    # Check if the received request is valid
     if 'body' not in event:
-        print("Invalid request: Missing 'body' in the event")
+        log_message = ("Invalid request: Missing 'body' in the event")
+        log_entry = f"{datetime.now()} -  {log_message} - Status Code: {response.status_code}, Response: {response.text}"
         return
 
    # Parse the JSON payload into a Python object
 
     pd_payload = json.loads(event['body'])
-    print(f"Received payload: {pd_payload}")
+    log_message = (f"Received payload: {pd_payload}")
+    log_entry = f"{datetime.now()} -  {log_message} - Status Code: {response.status_code}, Response: {response.text}"
+    append_logs_to_s3(log_entry)
     
-    if 'body' in pd_payload:
-        pd_payload = pd_payload['body']
-   
     # Extract the incident ID, summary, and URL from the payload
     try:
         incident_id = pd_payload['incident']['id']
         incident_summary = pd_payload['incident']['summary']
         incident_url = pd_payload['incident']['html_url']
     except KeyError as e:
-        print(f"Invalid payload: Missing key {e}")
+        log_message = (f"Invalid payload: Missing key {e}")
+        log_entry = f"{datetime.now()} - {log_message} - Status Code: {response.status_code}, Response: {response.text}"
+        append_logs_to_s3(log_entry)
         return
+        
          
     # Create a new Jira ticket  
     auth = HTTPBasicAuth(jira_user, jira_token)
@@ -68,13 +87,15 @@ def lambda_handler(event, context):
         headers=headers
     )
 
-    if response.status_code == 201:  # Assuming 201 as the successful status code for Jira ticket creation
-        print("Jira ticket created successfully")    
+    if response.status_code == 201:  # Assuming 201 as the successful status code for Jira ticket creation           
         jira_ticket_url = f'{jira_url}/jira/core/projects/{jira_key}/issues'
-        incident_message = jira_ticket_url     
+        incident_message = jira_ticket_url
+        log_message = ("Jira ticket created successfully") 
+        log_entry = f"{datetime.now()} - {log_message} - Status Code: {response.status_code}, Response: {response.text}"     
     else:
-        error_jira = "Jira ticket creation error"
-        print(f"{error_jira}, Status Code: {response.status_code}, Response: {response.text}")    
+        log_message(f"{Jira ticket creation error, Status Code: {response.status_code}, Response: {response.text}")    
+        log_entry = f"{datetime.now()} - {log_message}, Status Code: {response.status_code}, Response: {response.text}"
+    append_logs_to_s3(log_entry)    
         
     # Send a message to a Webex 
     url = "https://webexapis.com/v1/messages"
@@ -98,7 +119,11 @@ def lambda_handler(event, context):
             })
         }
         return resp
+        log_entry = f"{datetime.now()} - Webex response - Status Code: {response.status_code}, Response: {response.text}"
+        
     else:
     	#erro message
         error_webex = "Webex POST request error"
-        print(f"{error_webex}, Status Code: {response.status_code}, Response: {response.text}")
+	log_entry = f"{datetime.now()} - {error_webex} - Status Code: {response.status_code}, Response: {response.text}"
+    append_logs_to_s3(log_entry)
+
