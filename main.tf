@@ -21,6 +21,11 @@ resource "aws_iam_role_policy_attachment" "lambda_logs_policy" {
   role       = aws_iam_role.lambda_execution_role.name
 }
 
+resource "aws_iam_role_policy_attachment" "s3_full_access_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+  role       = aws_iam_role.lambda_execution_role.name
+}
+
 # Define Lambda function
 resource "aws_lambda_function" "my_lambda_function" {
   filename         = data.archive_file.lambda_function_zip.output_path
