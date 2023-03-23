@@ -110,6 +110,15 @@ def lambda_handler(event, context):
         return incident_message
 
     # Send a message to a Webex
+    url = "https://webexapis.com/v1/messages"
+    headers = {
+        "Authorization": webex_token,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "roomId": webex_space_id,
+        "text": incident_message
+    }
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
     if response.status_code == 200:
