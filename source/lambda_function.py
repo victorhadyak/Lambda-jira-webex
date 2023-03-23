@@ -99,4 +99,5 @@ def lambda_handler(event, context):
         }
         return resp
     else:
+    	#error message
         print(f"Status Code: {response.status_code}, Response: {response.text}")
