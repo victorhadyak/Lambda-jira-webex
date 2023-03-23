@@ -18,38 +18,53 @@ webex_space_id = os.environ['WEBEX_SPACE_ID']
 s3_bucket_name = os.environ['S3_BUCKET_NAME']
 s3_key = os.environ['S3_KEY']
 
+def write_logs_to_s3(log_data):
+    log_filename = f'{datetime.utcnow().isoformat()}_{s3_key}.txt'
+    try:
+        s3.put_object(
+            Body=log_data,
+            Bucket=s3_bucket_name,
+            Key=log_filename
+        )
+    except ClientError as e:
+        print(f'Error writing log to S3: {e}')
+
 def lambda_handler(event, context):  
     # Set up the S3 client
     s3 = boto3.client('s3')
     
-    log_messages = []
+    # Check if the received request is valid and extract payload
     
-    # Check if the received request is valid
+    time_stamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+    
     if 'body' not in event:
-        message = "Invalid request: Missing 'body' in the event"
-        print(message)
-        log_messages.append(message)
-        return
+        log_messages = "Invalid request: Missing 'body' in the event"
+        print(log_messages)    
+        log_data = f"{time_stamp} {log_messages}"    
+    	write_logs_to_s3(log_data)
+    	return f"{log_messages}"
+
     # Parse the JSON payload into a Python object
     pd_payload = json.loads(event['body'])
-    message = f"Received payload: {pd_payload}"
-    print(message)
-    log_messages.append(message)
 
     if 'body' in pd_payload:
         pd_payload = pd_payload['body']
-        log_messages.append(pd_payload)
-	
+        log_messages = pd_payload
+        log_data = f"{time_stamp} {log_messages}"     
+        write_logs_to_s3(log_data)
+        return f"{log_messages}"
+
     # Extract the incident ID, summary, and URL from the payload
     try:
         incident_id = pd_payload['incident']['id']
         incident_summary = pd_payload['incident']['summary']
         incident_url = pd_payload['incident']['html_url']
     except KeyError as e:
-        message = f"Invalid payload: Missing key {e}"
-        print(message)
-        log_messages.append(message)
-        return
+        log_messages = f"Invalid payload: Missing key {e}"
+        print(log_messages)
+        log_data = f"{log_messages}"
+        write_logs_to_s3(log_data)
+        return log_messages
          
     # Create a new Jira ticket  
     auth = HTTPBasicAuth(jira_user, jira_token)
@@ -83,6 +98,15 @@ def lambda_handler(event, context):
         headers=headers
     )
 
+    # Posting Jira ticket
+    response = requests.request(
+        "POST",
+        f'{jira_url}/rest/api/3/issue',
+        auth=auth,
+        data=jira_payload,
+        headers=headers
+    )
+
     incident_message = None
     if response.status_code == 201:  # Assuming 201 as the successful status code for Jira ticket creation
         print("Jira ticket created successfully")
@@ -92,50 +116,18 @@ def lambda_handler(event, context):
         error_jira = "Jira ticket creation error"
         incident_message = f"{error_jira}, Status Code: {response.status_code}, Response: {response.text}"
         print(incident_message)
-    
-    # Send a message to a Webex 
-    url = "https://webexapis.com/v1/messages"
-    headers = {
-        "Authorization": webex_token,
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "roomId": webex_space_id,
-        "text": incident_message
-    }
+        log_data = f"{log_messages}"        
+        write_logs_to_s3(log_data)
+        return incident_message
+
+    # Send a message to a Webex
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
-    message = None
     if response.status_code == 200:
-        resp = {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json"
-            },
-            "body": json.dumps({
-                "message": "OK"
-            })
-        }
-        message = f"Webex response {resp}"
+        status_message = f"Webex POST request successful"
     else:
-        error_webex = "Webex POST request error"
-        message = f"{error_webex}, Status Code: {response.status_code}, Response: {response.text}"
-        print(message)
-
-    # Log the event to S3
-    log_data = {
-        'timestamp': datetime.utcnow().isoformat(),
-        'payload': log_messages,
-        'incident_id': incident_id,       
-        'message': message
-    }
-
-    log_filename = f'{datetime.utcnow().isoformat()}_{s3_key}.json'
-    try:
-        s3.put_object(
-            Body=json.dumps(log_data),
-            Bucket=s3_bucket_name,
-            Key=log_filename
-        )
-    except ClientError as e:
-        print(f'Error writing log to S3: {e}')
+        status_message = f"Webex POST request error"
+    message = f"{status_message}, Status Code: {response.status_code}, Response: {response.text}"
+    log_data = f"{log_messages}"
+    write_logs_to_s3(log_data)
+    return f"{message}"
