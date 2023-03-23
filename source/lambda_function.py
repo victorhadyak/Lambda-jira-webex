@@ -25,9 +25,9 @@ def lambda_handler(event, context):
     
     # Check if the received request is valid
     if 'body' not in event:
-        error_message = "Invalid request: Missing 'body' in the event"
-        print(error_message)
-        log_messages.append(error_message)
+        message = "Invalid request: Missing 'body' in the event"
+        print(message)
+        log_messages.append(message)
         return
     # Parse the JSON payload into a Python object
     pd_payload = json.loads(event['body'])
@@ -35,6 +35,10 @@ def lambda_handler(event, context):
     print(message)
     log_messages.append(message)
 
+    if 'body' in pd_payload:
+        pd_payload = pd_payload['body']
+	log_messages.append(pd_payload)
+	
     # Extract the incident ID, summary, and URL from the payload
     try:
         incident_id = pd_payload['incident']['id']
