@@ -17,6 +17,9 @@ webex_space_id = os.environ['WEBEX_SPACE_ID']
 s3_bucket_name = ['S3_BUCKET_NAME']
 s3_key = ['S3_KEY']
 
+# Set up the S3 client    
+s3 = boto3.client('s3')
+
 def write_logs_to_s3(log_data):
     log_filename = f'{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")}_{s3_key}.txt'
     try:
@@ -28,20 +31,17 @@ def write_logs_to_s3(log_data):
     except ClientError as e:
         print(f'Error writing log to S3: {e}')
 
-def lambda_handler(event, context):  
-    # Set up the S3 client
-    s3 = boto3.client('s3')
+def lambda_handler(event, context):   
     
-    # Check if the received request is valid and extract payload
-    
+    # Check if the received request is valid and extract payload    
     time_stamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
     
     if 'body' not in event:
         log_messages = "Invalid request: Missing 'body' in the event"
         print(log_messages)    
         log_data = f"{time_stamp} {log_messages}"    
-    	write_logs_to_s3(log_data)
-    	return f"{log_messages}"
+        write_logs_to_s3(log_data)
+        return f"{log_messages}"
 
     # Parse the JSON payload into a Python object
     pd_payload = json.loads(event['body'])
