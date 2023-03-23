@@ -5,7 +5,6 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime
-from requests.auth import HTTPBasicAuth
 
 jira_url = os.environ['JIRA_URL']
 jira_user = os.environ['JIRA_USER']
@@ -15,11 +14,11 @@ jira_issue = os.environ['JIRA_ISSUE']
 jira_id = os.environ['JIRA_ID']
 webex_token = os.environ['WEBEX_ACCESS_TOKEN'] 
 webex_space_id = os.environ['WEBEX_SPACE_ID']
-s3_bucket_name = os.environ['S3_BUCKET_NAME']
-s3_key = os.environ['S3_KEY']
+s3_bucket_name = ['S3_BUCKET_NAME']
+s3_key = ['S3_KEY']
 
 def write_logs_to_s3(log_data):
-    log_filename = f'{datetime.utcnow().isoformat()}_{s3_key}.txt'
+    log_filename = f'{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")}_{s3_key}.txt'
     try:
         s3.put_object(
             Body=log_data,
@@ -41,7 +40,7 @@ def lambda_handler(event, context):
         log_messages = "Invalid request: Missing 'body' in the event"
         print(log_messages)    
         log_data = f"{time_stamp} {log_messages}"    
-        write_logs_to_s3(log_data)
+    	write_logs_to_s3(log_data)
     	return f"{log_messages}"
 
     # Parse the JSON payload into a Python object
@@ -88,16 +87,6 @@ def lambda_handler(event, context):
         },
         "update": {}
     })
-
-    # Posting Jira ticket
-    response = requests.request(
-        "POST",
-        f'{jira_url}/rest/api/3/issue',
-        auth=auth,
-        data=jira_payload,
-        headers=headers
-    )
-
     # Posting Jira ticket
     response = requests.request(
         "POST",
