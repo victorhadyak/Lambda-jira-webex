@@ -37,7 +37,7 @@ def lambda_handler(event, context):
 
     if 'body' in pd_payload:
         pd_payload = pd_payload['body']
-	log_messages.append(pd_payload)
+        log_messages.append(pd_payload)
 	
     # Extract the incident ID, summary, and URL from the payload
     try:
