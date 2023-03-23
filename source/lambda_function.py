@@ -99,6 +99,5 @@ def lambda_handler(event, context):
         }
         return resp
     else:
-    	#error message
         error_webex = "Webex POST request error"
         print(f"{error_webex}, Status Code: {response.status_code}, Response: {response.text}")
