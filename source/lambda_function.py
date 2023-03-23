@@ -41,7 +41,7 @@ def lambda_handler(event, context):
         log_messages = "Invalid request: Missing 'body' in the event"
         print(log_messages)    
         log_data = f"{time_stamp} {log_messages}"    
-    	write_logs_to_s3(log_data)
+        write_logs_to_s3(log_data)
     	return f"{log_messages}"
 
     # Parse the JSON payload into a Python object
