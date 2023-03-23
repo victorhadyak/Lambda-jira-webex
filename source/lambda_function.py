@@ -5,6 +5,7 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime
+from requests.auth import HTTPBasicAuth
 
 jira_url = os.environ['JIRA_URL']
 jira_user = os.environ['JIRA_USER']
@@ -14,8 +15,8 @@ jira_issue = os.environ['JIRA_ISSUE']
 jira_id = os.environ['JIRA_ID']
 webex_token = os.environ['WEBEX_ACCESS_TOKEN'] 
 webex_space_id = os.environ['WEBEX_SPACE_ID']
-s3_bucket_name = ['S3_BUCKET_NAME']
-s3_key = ['S3_KEY']
+s3_bucket_name = os.environ['S3_BUCKET_NAME']
+s3_key = os.environ['S3_KEY']
 
 def lambda_handler(event, context):  
     # Set up the S3 client
