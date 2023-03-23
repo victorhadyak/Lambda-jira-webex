@@ -39,7 +39,7 @@ def lambda_handler(event, context):
     if 'body' not in event:
         log_messages = "Invalid request: Missing 'body' in the event"
         print(log_messages)    
-        log_data = f"{time_stamp} {log_messages}"    
+        log_data = f"{time_stamp} {json.dumps(log_messages)}"    
         write_logs_to_s3(log_data)
         return f"{log_messages}"
 
@@ -49,7 +49,7 @@ def lambda_handler(event, context):
     if 'body' in pd_payload:
         pd_payload = pd_payload['body']
         log_messages = pd_payload
-        log_data = f"{time_stamp} {log_messages}"     
+        log_data = f"{time_stamp} {json.dumps(log_messages)}"    
         write_logs_to_s3(log_data)
         return f"{log_messages}"
 
@@ -61,7 +61,7 @@ def lambda_handler(event, context):
     except KeyError as e:
         log_messages = f"Invalid payload: Missing key {e}"
         print(log_messages)
-        log_data = f"{log_messages}"
+        log_data = f"{json.dumps(log_messages)}"
         write_logs_to_s3(log_data)
         return log_messages
          
@@ -105,7 +105,7 @@ def lambda_handler(event, context):
         error_jira = "Jira ticket creation error"
         incident_message = f"{error_jira}, Status Code: {response.status_code}, Response: {response.text}"
         print(incident_message)
-        log_data = f"{log_messages}"        
+        log_data = f"{json.dumps(incident_message)}"       
         write_logs_to_s3(log_data)
         return incident_message
 
@@ -126,6 +126,6 @@ def lambda_handler(event, context):
     else:
         status_message = f"Webex POST request error"
     message = f"{status_message}, Status Code: {response.status_code}, Response: {response.text}"
-    log_data = f"{log_messages}"
+    log_data = f"{json.dumps(message)}"
     write_logs_to_s3(log_data)
     return f"{message}"
