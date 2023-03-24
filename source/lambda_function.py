@@ -21,7 +21,6 @@ s3_key = os.environ['S3_KEY']
 # Set up the S3 client    
 s3 = boto3.client('s3')
 
-# Custom logging handler class to store logs and write them to S3
 class S3LogHandler(logging.Handler):
     def __init__(self):
         super().__init__()
@@ -31,9 +30,11 @@ class S3LogHandler(logging.Handler):
     def emit(self, record):
         log_entry = self.format(record)
         self.log_entries.append(log_entry)
+        print(f"Log entry added: {log_entry}")
 
     def write_logs_to_s3(self):
         log_data = "\n".join(self.log_entries)
+        print(f"Writing logs to S3: {log_data}")
         log_filename = f'{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")}_{s3_key}.txt'
         try:
             s3.put_object(
