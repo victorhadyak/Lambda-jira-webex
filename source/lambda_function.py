@@ -33,7 +33,7 @@ class S3LogHandler(logging.Handler):
 
     def write_logs_to_s3(self):
         log_data = "\n".join(self.log_entries)
-        log_filename = f'{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")}_{s3_key}.txt'
+        log_filename = f'{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")}_{s3_key}.log'
         try:
             s3.put_object(
                 Body=log_data,
@@ -63,8 +63,12 @@ def create_jira_ticket(jira_payload, auth, headers):
         logging.error(f"Jira ticket creation error, Status Code: {response.status_code}, Response: {response.text}")
         return None
         
-def send_webex_message(incident_message, headers):
+def send_webex_message(incident_message):
     url = "https://webexapis.com/v1/messages"
+    headers = {
+        "Authorization": f"Bearer {webex_token}",
+        "Content-Type": "application/json"
+    }
     payload = {
         "roomId": webex_space_id,
         "text": incident_message
@@ -125,8 +129,8 @@ def lambda_handler(event, context):
     # Create a new Jira ticket
     incident_message = create_jira_ticket(jira_payload, auth, headers)
     if incident_message:
-        send_webex_message(incident_message, headers)
-
+        send_webex_message(incident_message)
+        
     # Write logs to S3 at the end of the Lambda invocation
     s3_log_handler.write_logs_to_s3()
 
