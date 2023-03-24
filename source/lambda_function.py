@@ -46,10 +46,8 @@ def lambda_handler(event, context):
 
     if 'body' in pd_payload:
         pd_payload = pd_payload['body']
-        log_data = {
-            'payload': pd_payload           
-        }
-        write_logs_to_s3(json.dumps(log_data))     
+        log_data = f"payload: {pd_payload}"
+        write_logs_to_s3(log_data)     
         
     
     # Extract the incident ID, summary, and URL from the payload
