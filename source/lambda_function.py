@@ -95,9 +95,11 @@ def lambda_handler(event, context):
         return "Invalid request: Missing 'body' in the event"
 
     # Parse and log the payload
-    pd_payload = json.loads(event['body']['sourceIp'])    
+    pd_payload = json.loads(event['body'])
+    sender_ip = event['sourceIp']
+    pd_payload['sender_ip'] = sender_ip
     if 'body' in pd_payload:
-        pd_payload = pd_payload(['body']['sourceIp'])
+        pd_payload = pd_payload['body']
         logger.info(f"payload: {pd_payload}")
 
     # Extract incident information from the payload
