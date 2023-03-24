@@ -46,6 +46,7 @@ class S3LogHandler(logging.Handler):
             logging.error(f'Error writing log to S3: {e}')
 
 # Initialize the custom S3 log handler and configure logging
+s3_log_handler = S3LogHandler()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 logger = logging.getLogger()
 logger.addHandler(s3_log_handler)
