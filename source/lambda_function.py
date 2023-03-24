@@ -59,10 +59,13 @@ def create_jira_ticket(jira_payload, auth, headers):
         headers=headers
     )
 
-    if response.status_code == 201:  # Assuming 201 as the successful status code for Jira ticket creation
+    if response.status_code == 201:
         logger.info("Jira ticket created successfully")
-        jira_ticket_url = f'{jira_url}/jira/core/projects/{jira_key}/issues'
-        return jira_ticket_url
+        jira_ticket_data = response.json()
+        jira_ticket_id = jira_ticket_data["id"]
+        jira_ticket_key = jira_ticket_data["key"]
+        jira_ticket_url = f'{jira_url}/browse/{jira_ticket_key}'
+        return jira_ticket_id, jira_ticket_url
     else:
         logger.error(f"Jira ticket creation error, Status Code: {response.status_code}, Response: {response.text}")
         return None
@@ -131,11 +134,20 @@ def lambda_handler(event, context):
     })
     
     # Create a new Jira ticket
-    incident_message = create_jira_ticket(jira_payload, auth, headers)
-    if incident_message:
-        send_webex_message(incident_message)
+    incident_jira_ticket_id, incident_jira_ticket_url = create_jira_ticket(jira_payload, auth, headers)
+    if incident_jira_ticket_id:
+        logger.info(f"Jira ticket URL: {incident_jira_ticket_url}")
+        send_webex_message(incident_jira_ticket_url)
         
     # Write logs to S3 at the end of the Lambda invocation
     s3_log_handler.write_logs_to_s3()
 
-    return incident_message
+    response = {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": json.dumps({"message": "success"})
+    }
+
+    return response
