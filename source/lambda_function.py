@@ -26,6 +26,7 @@ class S3LogHandler(logging.Handler):
     def __init__(self):
         super().__init__()
         self.log_entries = []
+        self.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
 
     def emit(self, record):
         log_entry = self.format(record)
@@ -33,7 +34,7 @@ class S3LogHandler(logging.Handler):
 
     def write_logs_to_s3(self):
         log_data = "\n".join(self.log_entries)
-        log_filename = f'{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")}_{s3_key}.log'
+        log_filename = f'{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")}_{s3_key}.txt'
         try:
             s3.put_object(
                 Body=log_data,
@@ -66,7 +67,7 @@ def create_jira_ticket(jira_payload, auth, headers):
 def send_webex_message(incident_message):
     url = "https://webexapis.com/v1/messages"
     headers = {
-        "Authorization": f"Bearer {webex_token}",
+        "Authorization": f"{webex_token}",
         "Content-Type": "application/json"
     }
     payload = {
