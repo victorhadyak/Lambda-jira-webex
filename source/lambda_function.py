@@ -49,16 +49,9 @@ def lambda_handler(event, context):
         log_data = {
             'payload': pd_payload           
         }
-        write_logs_to_s3(log_data)
+        write_logs_to_s3(log_data)     
         
-        
-    except ClientError as e:
-        print(f'Error writing log to S3: {e}')
-        log_messages = pd_payload
-        log_data = log_messages    
-        write_logs_to_s3[log_data]
-        return log_messages
-
+    
     # Extract the incident ID, summary, and URL from the payload
     try:
         incident_id = pd_payload['incident']['id']
