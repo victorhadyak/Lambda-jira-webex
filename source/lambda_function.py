@@ -96,7 +96,7 @@ def lambda_handler(event, context):
 
     # Parse and log the payload
     pd_payload = json.loads(event['body'])
-    sender_ip = event['requestContext']['http']['sourceIp']
+    sender_ip = event['requestContext'].get('http', {}).get('sourceIp', 'Unknown')
     pd_payload['sender_ip'] = sender_ip
     if 'body' in pd_payload:
         pd_payload = pd_payload['body']
