@@ -49,7 +49,7 @@ def lambda_handler(event, context):
         log_data = {
             'payload': pd_payload           
         }
-        write_logs_to_s3(log_data)     
+        write_logs_to_s3(json.dumps(log_data))     
         
     
     # Extract the incident ID, summary, and URL from the payload
