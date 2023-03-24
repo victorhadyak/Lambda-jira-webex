@@ -1,0 +1,13 @@
+FROM jenkins/ssh-agent:alpine
+
+# Install Terraform
+ENV TERRAFORM_VERSION=1.1.0
+RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+    && unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+    && mv terraform /usr/local/bin/ \
+    && rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+# Install AWS CLI
+RUN apk add --no-cache python3 py3-pip \
+    && pip3 install --upgrade pip \
+    && pip3 install awscli

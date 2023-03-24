@@ -1,0 +1,85 @@
+pipeline {
+  agent {
+      label 'agent1'
+  }
+  stages {
+    stage('Clone repository') {
+      steps {
+        git branch: 'main', url: 'https://github.com/victorhadyak/Lambda-jira-webex'
+      }
+    }
+    stage('Provision infrastructure') {
+      steps {
+        withCredentials([[
+          $class: 'AmazonWebServicesCredentialsBinding',
+          credentialsId: "AWS",
+          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+        ]]) {
+          sh "terraform init"
+          sh "terraform plan"
+          sh "terraform apply -auto-approve"
+        }
+      }
+    }  
+    stage('Configure Lambda') {
+        steps {
+            script{
+               withCredentials(bindings: [
+                [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "AWS", accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'],
+                string(credentialsId: 'webex_access_token', variable: 'WEBEX_ACCESS_TOKEN'),
+                string(credentialsId: 'webex_space_id', variable: 'WEBEX_SPACE_ID'),
+                string(credentialsId: 'jira_user', variable: 'JIRA_USER'),
+                string(credentialsId: 'jira_url', variable: 'JIRA_URL'),
+                string(credentialsId: 'jira_key', variable: 'JIRA_KEY'),
+                string(credentialsId: 'jira_issue', variable: 'JIRA_ISSUE'),
+                string(credentialsId: 'jira_id', variable: 'JIRA_ID'),
+                string(credentialsId: 'jira_token', variable: 'JIRA_TOKEN'),
+                string(credentialsId: 's3_bucket_name', variable: 'S3_BUCKET_NAME')
+               ]) {
+                    sh """aws lambda update-function-configuration --function-name my-lambda-function --region eu-central-1 --environment "Variables={WEBEX_ACCESS_TOKEN=\${WEBEX_ACCESS_TOKEN},WEBEX_SPACE_ID=\${WEBEX_SPACE_ID},JIRA_TOKEN=\${JIRA_TOKEN},JIRA_USER=\${JIRA_USER},JIRA_URL=\${JIRA_URL},JIRA_KEY=\${JIRA_KEY},JIRA_ISSUE=\${JIRA_ISSUE},JIRA_ID=\${JIRA_ID},S3_BUCKET_NAME=\${S3_BUCKET_NAME},S3_KEY=\${S3_KEY}}" """
+            
+                }    
+            }
+        }
+    }
+    stage('Get API Gateway URL') {
+        steps {
+            // Get the output value of the Terraform code
+            withEnv(['API_GATEWAY_URL=${terraform.output.api_gateway_url}']) {
+                echo "API Gateway URL: ${env.API_GATEWAY_URL}"
+                // Set the API_GATEWAY_URL environment variable for the Python script
+            }
+        }
+    }
+    stage('Test Lambda function') {
+        steps {
+            script {
+                // Get the output value of the Terraform code
+                def api_gateway_url = sh(script: "terraform output api_gateway_url", returnStdout: true).trim()
+                // Use the API_GATEWAY_URL variable in the Python test script
+                dir("${env.WORKSPACE}/test") {
+                    def response = sh(script: "python3 test_api.py ${api_gateway_url}", returnStdout: true).trim()
+                    if (response == "Test passed") {
+                        echo "Test passed"
+                    } else {
+                        error "Test failed. Python script output: ${response}"
+                    }
+                }    
+            }
+        }
+    }
+    /*stage('Destroy infrastructure') {
+      steps {
+        withCredentials([[
+          $class: 'AmazonWebServicesCredentialsBinding',
+          credentialsId: "AWS",
+          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+        ]]) {
+          sh "terraform destroy -auto-approve"
+        }
+      }
+    }*/  
+  }
+}

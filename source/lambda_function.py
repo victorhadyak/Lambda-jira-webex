@@ -157,6 +157,9 @@ def lambda_handler(event, context):
         # Send the Jira ticket URL as a Webex message
         send_webex_message(incident_jira_ticket_url)
     
+    # Write logs to the S3 bucket
+    s3_log_handler.write_logs_to_s3()
+    
     # Response to the trigger request sender
     response = {
         "statusCode": 200,

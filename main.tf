@@ -83,7 +83,7 @@ resource "aws_api_gateway_deployment" "my_deployment" {
   depends_on  = [aws_api_gateway_integration.my_lambda_integration]
   rest_api_id = aws_api_gateway_rest_api.my_api_gateway.id
 }
-
+#Deploy stage
 resource "aws_api_gateway_stage" "my_stage" {
   deployment_id = aws_api_gateway_deployment.my_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.my_api_gateway.id

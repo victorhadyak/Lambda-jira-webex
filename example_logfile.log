@@ -1,0 +1,4 @@
+2023-03-24 15:17:24,956 INFO: payload: {'incident': {'id': '123456', 'summary': 'Test Incident', 'html_url': 'https://www.pagerduty.com/'}, 'sender_ip': '8.8.8.8'}
+2023-03-24 15:17:26,281 INFO: Jira ticket created successfully
+2023-03-24 15:17:26,281 INFO: Jira ticket URL: https://some.atlassian.net/browse/LAM-1
+2023-03-24 15:17:26,620 INFO: Webex POST request successful
