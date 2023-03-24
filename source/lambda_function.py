@@ -35,7 +35,7 @@ class S3LogHandler(logging.Handler):
     def write_logs_to_s3(self):
         log_data = "\n".join(self.log_entries)
         print(f"Writing logs to S3: {log_data}")
-        log_filename = f'{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")}_{s3_key}.txt'
+        log_filename = f'{datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")}_{s3_key}.log'
         try:
             s3.put_object(
                 Body=log_data,
@@ -46,8 +46,9 @@ class S3LogHandler(logging.Handler):
             logging.error(f'Error writing log to S3: {e}')
 
 # Initialize the custom S3 log handler and configure logging
-s3_log_handler = S3LogHandler()
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s', handlers=[s3_log_handler])
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
+logger = logging.getLogger()
+logger.addHandler(s3_log_handler)
 
 def create_jira_ticket(jira_payload, auth, headers):
     response = requests.post(
@@ -58,11 +59,11 @@ def create_jira_ticket(jira_payload, auth, headers):
     )
 
     if response.status_code == 201:  # Assuming 201 as the successful status code for Jira ticket creation
-        logging.info("Jira ticket created successfully")
+        logger.info("Jira ticket created successfully")
         jira_ticket_url = f'{jira_url}/jira/core/projects/{jira_key}/issues'
         return jira_ticket_url
     else:
-        logging.error(f"Jira ticket creation error, Status Code: {response.status_code}, Response: {response.text}")
+        logger.error(f"Jira ticket creation error, Status Code: {response.status_code}, Response: {response.text}")
         return None
         
 def send_webex_message(incident_message):
@@ -78,14 +79,14 @@ def send_webex_message(incident_message):
     response = requests.post(url, data=json.dumps(payload), headers=headers)
 
     if response.status_code == 200:
-        logging.info("Webex POST request successful")
+        logger.info("Webex POST request successful")
     else:
-        logging.error(f"Webex POST request error, Status Code: {response.status_code}, Response: {response.text}")
+        logger.error(f"Webex POST request error, Status Code: {response.status_code}, Response: {response.text}")
 
 def lambda_handler(event, context):
     # Validate the received request
     if 'body' not in event:
-        logging.error("Invalid request: Missing 'body' in the event")
+        logger.error("Invalid request: Missing 'body' in the event")
         s3_log_handler.write_logs_to_s3()
         return "Invalid request: Missing 'body' in the event"
 
@@ -93,7 +94,7 @@ def lambda_handler(event, context):
     pd_payload = json.loads(event['body'])
     if 'body' in pd_payload:
         pd_payload = pd_payload['body']
-        logging.info(f"payload: {pd_payload}")
+        logger.info(f"payload: {pd_payload}")
 
     # Extract incident information from the payload
     try:
@@ -101,7 +102,7 @@ def lambda_handler(event, context):
         incident_summary = pd_payload['incident']['summary']
         incident_url = pd_payload['incident']['html_url']
     except KeyError as e:
-        logging.error(f"Invalid payload: Missing key {e}")
+        logger.error(f"Invalid payload: Missing key {e}")
         s3_log_handler.write_logs_to_s3()
         return f"Invalid payload: Missing key {e}"
          
