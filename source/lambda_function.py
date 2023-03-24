@@ -130,4 +130,4 @@ def lambda_handler(event, context):
     # Write logs to S3 at the end of the Lambda invocation
     s3_log_handler.write_logs_to_s3()
 
-    return message
+    return incident_message
