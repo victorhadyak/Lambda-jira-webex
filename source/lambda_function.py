@@ -50,6 +50,7 @@ class S3LogHandler(logging.Handler):
 # Initialize the custom S3 log handler and configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 logger = logging.getLogger()
+s3_log_handler = S3LogHandler()
 logger.addHandler(s3_log_handler)
 
 def create_jira_ticket(jira_payload, auth, headers):
