@@ -42,14 +42,12 @@ class S3LogHandler(logging.Handler):
                 Bucket=s3_bucket_name,
                 Key=log_filename
             )
-            print(f"Logs written to S3: {s3_bucket_name}/{log_filename}")
         except Exception as e:
-            logging.error(f'Error writing log to S3: {e}')
-            print(f"Error writing log to S3: {e}")
+            print(f'Error writing log to S3: {e}')
 
 # Initialize the custom S3 log handler and configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 s3_log_handler = S3LogHandler()
 logger.addHandler(s3_log_handler)
 
