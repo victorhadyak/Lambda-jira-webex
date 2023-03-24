@@ -18,10 +18,14 @@ webex_token = os.environ['WEBEX_ACCESS_TOKEN']
 webex_space_id = os.environ['WEBEX_SPACE_ID']
 s3_bucket_name = os.environ['S3_BUCKET_NAME']
 
-s3_key = 'logs'
-
 # Set up the S3 client    
 s3 = boto3.client('s3')
+s3_key = 'logs'
+auth = HTTPBasicAuth(jira_user, jira_token)
+headers = {
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+}
 
 #Custom logging handler stores logs in memory and writes them to an S3 bucket at the end of the invocation.
 class S3LogHandler(logging.Handler):
@@ -50,31 +54,53 @@ class S3LogHandler(logging.Handler):
         except Exception as e:
             print(f'Error writing log to S3: {e}')
 
+def create_jira_payload(incident_id, incident_summary, incident_url, jira_issue, jira_id):
+    return json.dumps({
+        "fields": {
+            "issuetype": {
+                "name": jira_issue
+            },
+            "labels": [
+                incident_id,
+                incident_url
+            ],
+            "project": {
+                "id": jira_id
+            },
+            "summary": incident_summary,
+        },
+        "update": {}
+    })
+
 # Initialize the custom S3 log handler and configure logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 s3_log_handler = S3LogHandler()
 logger.addHandler(s3_log_handler)
 
-def create_jira_ticket(jira_payload, auth, headers):
-    response = requests.post(
-        f'{jira_url}/rest/api/3/issue',
-        auth=auth,
-        data=jira_payload,
-        headers=headers
-    )
-
-    if response.status_code == 201:
-        logger.info("Jira ticket created successfully")
-        jira_ticket_data = response.json()
-        jira_ticket_id = jira_ticket_data["id"]
-        jira_ticket_key = jira_ticket_data["key"]
-        jira_ticket_url = f'{jira_url}/browse/{jira_ticket_key}'
-        return jira_ticket_id, jira_ticket_url
-    else:
-        logger.error(f"Jira ticket creation error, Status Code: {response.status_code}, Response: {response.text}")
+#Create a Jira ticket using the provided payload, authentication, and headers
+def create_jira_ticket(jira_payload, auth, headers): 
+    try:
+        response = requests.post(
+            f'{jira_url}/rest/api/3/issue',
+            auth=auth,
+            data=jira_payload,
+            headers=headers
+        )
+        if response.status_code == 201:
+            logger.info("Jira ticket created successfully")
+            jira_ticket_data = response.json()
+            jira_ticket_id = jira_ticket_data["id"]
+            jira_ticket_key = jira_ticket_data["key"]
+            jira_ticket_url = f'{jira_url}/browse/{jira_ticket_key}'
+            return jira_ticket_id, jira_ticket_url
+        else:
+            logger.error(f"Failed to create Jira ticket. Status Code: {response.status_code}, Response: {response.text}")
+            return None
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error creating Jira ticket: {e}")
         return None
-        
+                
 def send_webex_message(incident_message):
     url = "https://webexapis.com/v1/messages"
     headers = {
@@ -117,38 +143,19 @@ def lambda_handler(event, context):
         logger.error(f"Invalid payload: Missing key {e}")
         s3_log_handler.write_logs_to_s3()
         return f"Invalid payload: Missing key {e}"
-         
-    # Create a new Jira ticket  
-    auth = HTTPBasicAuth(jira_user, jira_token)
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-    }
-    jira_payload = json.dumps({
-        "fields": {      
-            "issuetype": {
-                "name": jira_issue
-            },
-            "labels": [
-                incident_id,
-                incident_url
-            ],   
-            "project": {
-                "id": jira_id
-            },
-            "summary": incident_summary,
-        },
-        "update": {}
-    })
-    
-    # Send a ticket to Jira
+             
+    # Create the Jira payload by passing necessary parameters
+    jira_payload = create_jira_payload(incident_id, incident_summary, incident_url, jira_issue, jira_id)
+
+    # Call the create_jira_ticket function to create a Jira ticket and returns the ticket ID and the ticket URL
     incident_jira_ticket_id, incident_jira_ticket_url = create_jira_ticket(jira_payload, auth, headers)
+
+    # Check if the Jira ticket was created successfully by verifying if the incident_jira_ticket_id is not None
     if incident_jira_ticket_id:
         logger.info(f"Jira ticket URL: {incident_jira_ticket_url}")
+
+        # Send the Jira ticket URL as a Webex message
         send_webex_message(incident_jira_ticket_url)
-        
-    # Write logs to S3 at the end of the Lambda invocation
-    s3_log_handler.write_logs_to_s3()
     
     # Response to the trigger request sender
     response = {
