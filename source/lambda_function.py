@@ -1,12 +1,13 @@
-import requests
-from requests.auth import HTTPBasicAuth
-import json
 import os
+import json
 import boto3
 import logging
-from botocore.exceptions import ClientError
+import requests
 from datetime import datetime
+from requests.auth import HTTPBasicAuth
+from botocore.exceptions import ClientError
 
+#Variables stored in Jenkins
 jira_url = os.environ['JIRA_URL']
 jira_user = os.environ['JIRA_USER']
 jira_token = os.environ['JIRA_TOKEN']
@@ -16,22 +17,26 @@ jira_id = os.environ['JIRA_ID']
 webex_token = os.environ['WEBEX_ACCESS_TOKEN'] 
 webex_space_id = os.environ['WEBEX_SPACE_ID']
 s3_bucket_name = os.environ['S3_BUCKET_NAME']
-s3_key = os.environ['S3_KEY']
+
+s3_key = 'logs'
 
 # Set up the S3 client    
 s3 = boto3.client('s3')
 
+#Custom logging handler stores logs in memory and writes them to an S3 bucket at the end of the invocation.
 class S3LogHandler(logging.Handler):
     def __init__(self):
         super().__init__()
         self.log_entries = []
         self.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
 
+    #Format the log record and append it to the log_entries list.
     def emit(self, record):
         log_entry = self.format(record)
         self.log_entries.append(log_entry)
         print(f"Log entry added: {log_entry}")
 
+    #Write the logs collected in the log_entries list to an S3 bucket.
     def write_logs_to_s3(self):
         log_data = "\n".join(self.log_entries)
         print(f"Writing logs to S3: {log_data}")
@@ -99,6 +104,7 @@ def lambda_handler(event, context):
     sender_ip = event['requestContext']['identity']['sourceIp']
     if 'body' in pd_payload:
         pd_payload = pd_payload['body']
+    # Additional inserting ip of a sender
     pd_payload['sender_ip'] = sender_ip
     logger.info(f"payload: {pd_payload}")
 
@@ -135,7 +141,7 @@ def lambda_handler(event, context):
         "update": {}
     })
     
-    # Create a new Jira ticket
+    # Send a ticket to Jira
     incident_jira_ticket_id, incident_jira_ticket_url = create_jira_ticket(jira_payload, auth, headers)
     if incident_jira_ticket_id:
         logger.info(f"Jira ticket URL: {incident_jira_ticket_url}")
@@ -143,7 +149,8 @@ def lambda_handler(event, context):
         
     # Write logs to S3 at the end of the Lambda invocation
     s3_log_handler.write_logs_to_s3()
-
+    
+    # Response to the trigger request sender
     response = {
         "statusCode": 200,
         "headers": {
