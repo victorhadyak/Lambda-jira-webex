@@ -47,7 +47,7 @@ def lambda_handler(event, context):
     if 'body' in pd_payload:
         pd_payload = pd_payload['body']
         log_messages = pd_payload
-        log_data = f"{log_messages}"    
+        log_data = log_messages    
         write_logs_to_s3(log_data)
         return log_messages
 
