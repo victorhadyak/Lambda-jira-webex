@@ -46,9 +46,22 @@ def lambda_handler(event, context):
 
     if 'body' in pd_payload:
         pd_payload = pd_payload['body']
+        log_data = {
+            'payload': pd_payload           
+        }
+        write_logs_to_s3(log_data
+        
+        try:
+            s3.put_object(
+                Body=json.dumps(log_data),
+                Bucket=s3_bucket_name,
+                Key=log_filename
+            )
+    except ClientError as e:
+        print(f'Error writing log to S3: {e}')
         log_messages = pd_payload
         log_data = log_messages    
-        write_logs_to_s3(log_data)
+        write_logs_to_s3[log_data]
         return log_messages
 
     # Extract the incident ID, summary, and URL from the payload
